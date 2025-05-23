@@ -1,206 +1,425 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Transaction Dashboard</title>
-</head>
-<body>
-  <h1>Transaction Dashboard</h1>
-  
-  <form id="transaction-form">
-    <input type="text" id="title" placeholder="Transaction title" required>
-    <input type="number" id="amount" placeholder="Amount" required step="0.01">
-    <button type="submit">Add Transaction</button>
-  </form>
-  <div id="error-message" class="error-message"></div>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Transaction Dashboard</title>
+    <style>
+      @import url("https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap");
 
-  <table>
-    <thead>
-      <tr>
-        <th>Title</th>
-        <th>Amount</th>
-        <th>Date</th>
-        <th>Action</th>
-      </tr>
-    </thead>
-    <tbody id="transaction-table"></tbody>
-  </table>
-
-  <button onclick="logout()" class="logout-btn">Logout</button>
-
-  <script>
-    // Authentication and Initialization
-    let currentUserId = null;
-    
-    async function initializeApp() {
-      try {
-        await checkAuth();
-        await fetchTransactions();
-      } catch (error) {
-        console.error('Initialization error:', error);
-        showError('Failed to initialize application');
+      :root {
+        --bg-primary: #121212; /* hampir hitam */
+        --bg-secondary: #1e1e1e; /* abu tua */
+        --bg-card: #2a2a2a; /* abu gelap untuk card */
+        --text-primary: #f0f0f0; /* putih keabu-an */
+        --text-secondary: #a0a0a0; /* abu sedang */
+        --accent: #888888; /* abu terang untuk hover/link */
+        --danger: #ff4d4f; /* merah elegan */
+        --success: #8bc34a; /* hijau lembut */
       }
-    }
 
-    async function checkAuth() {
-      try {
-        const res = await fetch('/api/auth/me');
-        if (!res.ok) {
-          throw new Error('Not authenticated');
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: "Poppins", sans-serif;
+        background-color: var(--bg-primary);
+        color: var(--text-primary);
+        min-height: 100vh;
+      }
+
+      .container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 2rem;
+      }
+
+      header {
+        background-color: var(--bg-secondary);
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        margin-bottom: 2rem;
+      }
+
+      .header-content {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 1rem 2rem;
+        max-width: 1200px;
+        margin: 0 auto;
+      }
+
+      .logo {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: white;
+      }
+
+      nav {
+        display: flex;
+        gap: 1.5rem;
+      }
+
+      nav a {
+        color: var(--text-secondary);
+        text-decoration: none;
+        transition: color 0.3s;
+      }
+
+      nav a:hover {
+        color: var(--accent);
+      }
+
+      h1 {
+        text-align: center;
+        margin-bottom: 2rem;
+        font-size: 2rem;
+        color: var(--accent);
+      }
+
+      .card {
+        background-color: var(--bg-card);
+        border-radius: 8px;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        transition: transform 0.3s, box-shadow 0.3s;
+      }
+
+      .card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+      }
+
+      .form-group {
+        display: flex;
+        gap: 1rem;
+        margin-bottom: 2rem;
+      }
+
+      input {
+        flex: 1;
+        padding: 0.75rem 1rem;
+        border: none;
+        border-radius: 4px;
+        background-color: var(--bg-secondary);
+        color: var(--text-primary);
+        font-size: 1rem;
+      }
+
+      input:focus {
+        outline: 2px solid var(--accent);
+      }
+
+      button {
+        padding: 0.75rem 1.5rem;
+        border: none;
+        border-radius: 4px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background-color 0.3s;
+      }
+
+      .btn-primary {
+        background-color: var(--accent);
+        color: var(--bg-primary);
+      }
+
+      .btn-primary:hover {
+        background-color: #3aa8d8;
+      }
+
+      .btn-danger {
+        background-color: var(--danger);
+        color: white;
+      }
+
+      .btn-danger:hover {
+        background-color: #e5177e;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-bottom: 2rem;
+      }
+
+      th,
+      td {
+        padding: 1rem;
+        text-align: left;
+        border-bottom: 1px solid var(--bg-secondary);
+      }
+
+      th {
+        background-color: var(--bg-secondary);
+        font-weight: 600;
+      }
+
+      .transaction-amount {
+        font-weight: 600;
+        color: var(--success);
+      }
+
+      .transaction-date {
+        color: var(--text-secondary);
+        font-size: 0.9rem;
+      }
+
+      .loading {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 300px;
+      }
+
+      .error {
+        color: var(--danger);
+        text-align: center;
+        padding: 1rem;
+        background-color: rgba(247, 37, 133, 0.1);
+        border-radius: 4px;
+        margin-bottom: 2rem;
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <div class="header-content">
+        <div class="logo">💰 Finance Tracker</div>
+        <nav>
+          <a href="/dashboard">Dashboard</a>
+          <a href="/reports">Reports</a>
+          <a href="/settings">Settings</a>
+        </nav>
+      </div>
+    </header>
+
+    <div class="container">
+      <h1>Transaction Dashboard</h1>
+
+      <div class="card">
+        <form id="transaction-form" class="form-group">
+          <input
+            type="text"
+            id="title"
+            placeholder="Transaction title"
+            required
+          />
+          <input
+            type="number"
+            id="amount"
+            placeholder="Amount"
+            required
+            step="0.01"
+          />
+          <input type="date" id="date" required />
+
+          <button type="submit" class="btn-primary">Add Transaction</button>
+        </form>
+        <div id="error-message" class="error"></div>
+      </div>
+
+      <div class="card">
+        <table>
+          <thead>
+            <tr>
+              <th>Title</th>
+              <th>Amount</th>
+              <th>Date</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody id="transaction-table">
+            <tr>
+              <td colspan="4" class="loading">Loading transactions...</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <button onclick="logout()" class="btn-danger">Logout</button>
+    </div>
+
+    <script>
+      // Authentication and Initialization
+      let currentUserId = null;
+
+      async function initializeApp() {
+        try {
+          await checkAuth();
+          await fetchTransactions();
+        } catch (error) {
+          console.error("Initialization error:", error);
+          showError("Failed to initialize application");
         }
-        const data = await res.json();
-        currentUserId = data.user.userId;
-      } catch (error) {
-        console.error('Authentication error:', error);
-        window.location.href = '/login.html';
       }
-    }
 
-    // Transaction Functions
-    async function fetchTransactions() {
-      try {
-        const res = await fetch('/api/transactions');
-        if (!res.ok) {
-          throw new Error('Failed to fetch transactions');
+      async function checkAuth() {
+        try {
+          const res = await fetch("/api/auth/me");
+          if (!res.ok) {
+            throw new Error("Not authenticated");
+          }
+          const data = await res.json();
+          currentUserId = data.user.userId;
+        } catch (error) {
+          console.error("Authentication error:", error);
+          window.location.href = "/login.html";
         }
-        const transactions = await res.json();
-        renderTransactions(transactions);
-      } catch (error) {
-        console.error('Fetch transactions error:', error);
-        showError('Failed to load transactions');
-      }
-    }
-
-    function renderTransactions(transactions) {
-      const tbody = document.getElementById('transaction-table');
-      tbody.innerHTML = '';
-      
-      if (transactions.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="4" style="text-align: center;">No transactions found</td></tr>';
-        return;
       }
 
-      transactions.forEach(tx => {
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
+      // Transaction Functions
+      async function fetchTransactions() {
+        try {
+          const res = await fetch("/api/transactions");
+          if (!res.ok) {
+            throw new Error("Failed to fetch transactions");
+          }
+          const transactions = await res.json();
+          renderTransactions(transactions);
+        } catch (error) {
+          console.error("Fetch transactions error:", error);
+          showError("Failed to load transactions");
+        }
+      }
+
+      function renderTransactions(transactions) {
+        const tbody = document.getElementById("transaction-table");
+        tbody.innerHTML = "";
+
+        if (transactions.length === 0) {
+          tbody.innerHTML =
+            '<tr><td colspan="4" style="text-align: center;">No transactions found</td></tr>';
+          return;
+        }
+
+        transactions.forEach((tx) => {
+          const tr = document.createElement("tr");
+          tr.innerHTML = `
           <td>${escapeHtml(tx.title)}</td>
-          <td>${formatCurrency(tx.amount)}</td>
-          <td class="date-cell">${formatDate(tx.date || new Date().toISOString())}</td>
-          <td><button onclick="deleteTx(${tx.id})" class="delete-btn">Delete</button></td>
+          <td class="transaction-amount">${formatCurrency(tx.amount)}</td>
+          <td class="transaction-date">${formatDate(
+            tx.date || new Date().toISOString()
+          )}</td>
+          <td><button onclick="deleteTx(${
+            tx.id
+          })" class="btn-danger">Delete</button></td>
         `;
-        tbody.appendChild(tr);
-      });
-    }
+          tbody.appendChild(tr);
+        });
+      }
 
-    async function addTransaction(title, amount) {
-      try {
-        // Automatically add current date
-        const date = new Date().toISOString();
-        
-        const res = await fetch('/api/transactions', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ title, amount, date })
+      async function addTransaction(title, amount, date) {
+        try {
+          const res = await fetch("/api/transactions", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ title, amount, date }),
+          });
+
+          if (!res.ok) {
+            const errorData = await res.json();
+            throw new Error(errorData.message || "Failed to add transaction");
+          }
+
+          await fetchTransactions();
+          document.getElementById("transaction-form").reset();
+        } catch (error) {
+          console.error("Add transaction error:", error);
+          showError(error.message || "Failed to add transaction");
+        }
+      }
+
+      async function deleteTx(id) {
+        if (!confirm("Are you sure you want to delete this transaction?")) {
+          return;
+        }
+
+        try {
+          const res = await fetch(`/api/transactions?id=${id}`, {
+            method: "DELETE",
+          });
+
+          if (!res.ok) {
+            throw new Error("Failed to delete transaction");
+          }
+
+          await fetchTransactions();
+        } catch (error) {
+          console.error("Delete transaction error:", error);
+          showError("Failed to delete transaction");
+        }
+      }
+
+      // Helper Functions
+      function formatCurrency(amount) {
+        return new Intl.NumberFormat("id-ID", {
+          style: "currency",
+          currency: "IDR",
+        }).format(amount);
+      }
+
+      function formatDate(dateString) {
+        const date = new Date(dateString);
+        return date.toLocaleDateString("en-US", {
+          year: "numeric",
+          month: "short",
+          day: "numeric",
+        });
+      }
+
+      function escapeHtml(unsafe) {
+        return unsafe
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/"/g, "&quot;")
+          .replace(/'/g, "&#039;");
+      }
+
+      function showError(message) {
+        const errorElement = document.getElementById("error-message");
+        errorElement.textContent = message;
+        setTimeout(() => (errorElement.textContent = ""), 5000);
+      }
+
+      // Event Listeners
+      document
+        .getElementById("transaction-form")
+        .addEventListener("submit", async (e) => {
+          e.preventDefault();
+          const title = document.getElementById("title").value.trim();
+          const amount = parseFloat(document.getElementById("amount").value);
+          initializeApp();
+          document.getElementById("date").valueAsDate = new Date();
+
+          if (!title || isNaN(amount)) {
+            showError("Please enter valid title and amount");
+            return;
+          }
+
+          await addTransaction(title, amount);
         });
 
-        if (!res.ok) {
-          const errorData = await res.json();
-          throw new Error(errorData.message || 'Failed to add transaction');
+      async function logout() {
+        try {
+          const res = await fetch("/api/auth/logout");
+          if (!res.ok) {
+            throw new Error("Logout failed");
+          }
+          window.location.href = "/login.html";
+        } catch (error) {
+          console.error("Logout error:", error);
+          showError("Failed to logout");
         }
-
-        await fetchTransactions();
-        document.getElementById('transaction-form').reset();
-      } catch (error) {
-        console.error('Add transaction error:', error);
-        showError(error.message || 'Failed to add transaction');
-      }
-    }
-
-    async function deleteTx(id) {
-      if (!confirm('Are you sure you want to delete this transaction?')) {
-        return;
       }
 
-      try {
-        const res = await fetch(`/api/transactions?id=${id}`, { 
-          method: 'DELETE' 
-        });
-
-        if (!res.ok) {
-          throw new Error('Failed to delete transaction');
-        }
-
-        await fetchTransactions();
-      } catch (error) {
-        console.error('Delete transaction error:', error);
-        showError('Failed to delete transaction');
-      }
-    }
-
-    // Helper Functions
-    function formatCurrency(amount) {
-      return new Intl.NumberFormat('en-US', {
-        style: 'currency',
-        currency: 'USD'
-      }).format(amount);
-    }
-
-    function formatDate(dateString) {
-      const date = new Date(dateString);
-      return date.toLocaleDateString('en-US', {
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit'
-      });
-    }
-
-    function escapeHtml(unsafe) {
-      return unsafe
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;")
-        .replace(/'/g, "&#039;");
-    }
-
-    function showError(message) {
-      const errorElement = document.getElementById('error-message');
-      errorElement.textContent = message;
-      setTimeout(() => errorElement.textContent = '', 5000);
-    }
-
-    // Event Listeners
-    document.getElementById('transaction-form').addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const title = document.getElementById('title').value.trim();
-      const amount = parseFloat(document.getElementById('amount').value);
-      
-      if (!title || isNaN(amount)) {
-        showError('Please enter valid title and amount');
-        return;
-      }
-
-      await addTransaction(title, amount);
-    });
-
-    async function logout() {
-      try {
-        const res = await fetch('/api/auth/logout');
-        if (!res.ok) {
-          throw new Error('Logout failed');
-        }
-        window.location.href = '/login.html';
-      } catch (error) {
-        console.error('Logout error:', error);
-        showError('Failed to logout');
-      }
-    }
-
-    // Initialize the application
-    document.addEventListener('DOMContentLoaded', initializeApp);
-  </script>
-</body>
+      // Initialize the application
+      document.addEventListener("DOMContentLoaded", initializeApp);
+    </script>
+  </body>
 </html>

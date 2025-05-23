@@ -1,34 +1,146 @@
 <!DOCTYPE html>
-<html>
-
+<html lang="en">
 <head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Login</title>
-</head>
+  <style>
+    @import url("https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap");
 
+    :root {
+      --bg-primary: #121212; /* hampir hitam */
+      --bg-secondary: #1e1e1e; /* abu tua */
+      --bg-card: #2a2a2a; /* abu gelap untuk card */
+      --text-primary: #f0f0f0; /* putih keabu-an */
+      --text-secondary: #a0a0a0; /* abu sedang */
+      --accent: #888888; /* abu terang untuk hover/link */
+      --danger: #ff4d4f; /* merah elegan */
+      --success: #8bc34a; /* hijau lembut */
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: "Poppins", sans-serif;
+      background-color: var(--bg-primary);
+      color: var(--text-primary);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 1rem;
+    }
+
+    .login-container {
+      background-color: var(--bg-card);
+      padding: 2rem 3rem;
+      border-radius: 8px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+      width: 100%;
+      max-width: 400px;
+      text-align: center;
+    }
+
+    h1 {
+      margin-bottom: 2rem;
+      color: var(--accent);
+      font-weight: 700;
+      font-size: 2rem;
+    }
+
+    form {
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+    }
+
+    input {
+      padding: 0.75rem 1rem;
+      border: none;
+      border-radius: 4px;
+      background-color: var(--bg-secondary);
+      color: var(--text-primary);
+      font-size: 1rem;
+      transition: outline 0.3s ease;
+    }
+
+    input:focus {
+      outline: 2px solid var(--accent);
+      outline-offset: 2px;
+    }
+
+    button {
+      padding: 0.75rem 1.5rem;
+      border: none;
+      border-radius: 4px;
+      font-weight: 600;
+      cursor: pointer;
+      background-color: var(--accent);
+      color: var(--bg-primary);
+      transition: background-color 0.3s ease;
+      font-size: 1rem;
+    }
+
+    button:hover {
+      background-color: #5e5e5e;
+    }
+
+    .register-link {
+      margin-top: 1.5rem;
+      color: var(--text-secondary);
+      font-size: 0.9rem;
+    }
+
+    .register-link a {
+      color: var(--accent);
+      text-decoration: none;
+      font-weight: 600;
+      transition: color 0.3s ease;
+    }
+
+    .register-link a:hover {
+       color: #5e5e5e;
+    }
+  </style>
+</head>
 <body>
-  <form id="login-form">
-    <input type="text" id="username" placeholder="Username" required />
-    <input type="password" id="password" placeholder="Password" required />
-    <button type="submit">Login</button>
-  </form>
+  <div class="login-container">
+    <h1>Login</h1>
+    <form id="login-form">
+      <input type="text" id="username" placeholder="Username" required />
+      <input type="password" id="password" placeholder="Password" required />
+      <button type="submit">Login</button>
+    </form>
+    <div class="register-link">
+      Don't have an account? <a href="/register.html">Register here</a>
+    </div>
+  </div>
+
   <script>
     document.getElementById('login-form').addEventListener('submit', async (e) => {
       e.preventDefault();
       const username = document.getElementById('username').value;
       const password = document.getElementById('password').value;
-      const res = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, password })
-      });
-      const data = await res.json();
-      if (res.ok) {
-        location.href = '/dashboard.html';
-      } else {
-        alert(data.error);
+      try {
+        const res = await fetch('/api/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username, password })
+        });
+        const data = await res.json();
+        if (res.ok) {
+          location.href = '/dashboard.html';
+        } else {
+          alert(data.error || 'Login failed');
+        }
+      } catch (error) {
+        alert('An error occurred. Please try again.');
       }
     });
   </script>
 </body>
-
 </html>
